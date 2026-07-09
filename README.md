@@ -8,9 +8,22 @@ grounds every finding back to the exact source text, and hands a lawyer a
 ranked review queue they can override — plus an obligations calendar and a
 printable review memo.
 
-Built as a focused prototype of a real legal-ops workflow. Stack is
-TypeScript / React (Next.js App Router) / Node / PostgreSQL — deployed on
-Vercel + Neon.
+Built as a focused prototype of a real legal-ops workflow.
+
+**Tech stack**
+
+| Layer | Choice |
+|---|---|
+| Framework | [Next.js 16](https://nextjs.org) (App Router, Turbopack, Server Actions) |
+| Language | TypeScript, React 19 |
+| Styling | Tailwind CSS v4 |
+| Database | PostgreSQL — [Neon](https://neon.tech) (prod), local Postgres (dev) |
+| ORM / migrations | [Drizzle ORM](https://orm.drizzle.team) + drizzle-kit |
+| LLM | [Together AI](https://together.ai) — `MiniMaxAI/MiniMax-M3` |
+| Validation | [Zod](https://zod.dev) (structured LLM output + form input) |
+| PDF parsing | [unpdf](https://github.com/unjs/unpdf) (serverless-safe text extraction) |
+| Icons | [lucide-react](https://lucide.dev) |
+| Deployment | [Vercel](https://vercel.com), Neon via Vercel's native marketplace integration |
 
 > Try the three bundled samples on the live site. They're engineered to show
 > the full range: a vendor-hostile SaaS agreement (**risk 97**), a moderate
@@ -78,14 +91,14 @@ are highlighted in the document viewer. A finding whose quote can't be located
 is surfaced with an **"unverified quote"** badge rather than silently trusted.
 This is the difference between a demo and something a lawyer would rely on.
 
-**Structured output without a structured-output guarantee.** Qwen (via
-Together's OpenAI-compatible API) has no hard JSON-schema mode, so reliability
-is engineered in three layers: (1) `response_format: json_object` + explicit
-schema in the prompt; (2) a brace-matching JSON extractor that survives
-markdown fences and preamble; (3) Zod validation with a one-shot **repair
-retry** that feeds the validation error back to the model. And when the model
-returns a stray enum value, we **coerce it to a safe default rather than
-discard the whole extraction** — a lesson from a live run where one bad
+**Structured output without a schema guarantee.** Together's OpenAI-compatible
+API offers `response_format: json_object` but no hard JSON-schema mode, so
+reliability is engineered in three layers: (1) `response_format: json_object`
++ an explicit schema in the prompt; (2) a brace-matching JSON extractor that
+survives markdown fences and preamble; (3) Zod validation with a one-shot
+**repair retry** that feeds the validation error back to the model. And when
+the model returns a stray enum value, we **coerce it to a safe default rather
+than discard the whole extraction** — a lesson from a live run where one bad
 `clauseType` out of twelve would otherwise have nuked eleven good clauses.
 
 **Human-in-the-loop is modeled, not bolted on.** `assessments` stores the AI
@@ -106,7 +119,7 @@ schema migrations run against the **direct** endpoint (pooler can't introspect
 
 **Serverless-aware pipeline.** The LLM work runs in a Route Handler with
 `maxDuration = 120` and the Node runtime; the client shows staged progress
-while it runs. Two sequential model calls land in ~45–100s on the samples.
+while it runs. Two sequential model calls land in ~25–55s on the samples.
 
 ## Architecture
 
@@ -160,16 +173,29 @@ risk rollup is a single join of assessments to rules.
 
 ## Local development
 
+**Prerequisites:** Node 20.9+, [pnpm](https://pnpm.io), a running PostgreSQL
+instance, and a [Together AI](https://together.ai) API key.
+
 ```bash
 pnpm install
 cp .env.example .env.local      # set DATABASE_URL, TOGETHER_API_KEY, TOGETHER_MODEL
-pnpm db:push                    # create tables
-pnpm db:seed                    # load the playbook
+pnpm db:push                    # create tables from src/db/schema.ts
+pnpm db:seed                    # load the playbook (src/db/playbook.ts)
 pnpm dev                        # http://localhost:3000
 ```
 
-Requires PostgreSQL and a [Together AI](https://together.ai) key. The default
-model is `MiniMaxAI/MiniMax-M3`.
+Other useful commands:
+
+```bash
+pnpm build && pnpm start        # production build + run, locally
+pnpm lint                       # ESLint
+pnpm exec tsc --noEmit          # typecheck
+pnpm db:studio                  # browse the database (Drizzle Studio)
+```
+
+The default model is `MiniMaxAI/MiniMax-M3`; any Together AI chat model that
+supports `response_format: json_object` will work (see `TOGETHER_MODEL` in
+`.env.example`).
 
 ## Notes
 
