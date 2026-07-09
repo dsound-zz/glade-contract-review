@@ -38,12 +38,6 @@ export default function RootLayout({
             </Link>
             <nav className="flex items-center gap-1 text-sm">
               <HeaderNav />
-              <Link
-                href="/contracts/new"
-                className="ml-1 rounded-md bg-brand-600 px-3.5 py-1.5 font-medium text-white hover:bg-brand-700"
-              >
-                New review
-              </Link>
             </nav>
           </div>
         </header>
