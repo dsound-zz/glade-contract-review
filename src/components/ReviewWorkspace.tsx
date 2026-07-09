@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import {
   FileText,
@@ -26,7 +25,7 @@ import {
   SEVERITY_RANK,
   OBLIGATION_LABEL,
 } from "@/lib/labels";
-import { riskBand } from "@/lib/risk";
+import { effectiveVerdict, riskBand } from "@/lib/risk";
 import {
   overrideAssessment,
   clearOverride,
@@ -79,8 +78,6 @@ type Contract = {
   riskScore: number | null;
 };
 
-const effOf = (f: FindingDTO): Verdict => f.humanVerdict ?? f.aiVerdict;
-
 type Tab = "findings" | "document" | "obligations" | "memo";
 
 export function ReviewWorkspace({
@@ -94,14 +91,13 @@ export function ReviewWorkspace({
 }) {
   const [tab, setTab] = useState<Tab>("findings");
   const [activeId, setActiveId] = useState<string | null>(null);
-  const router = useRouter();
   const [pending, startTransition] = useTransition();
 
   const sorted = useMemo(
     () =>
       [...findings].sort(
         (a, b) =>
-          VERDICT_RANK[effOf(a)] - VERDICT_RANK[effOf(b)] ||
+          VERDICT_RANK[effectiveVerdict(a)] - VERDICT_RANK[effectiveVerdict(b)] ||
           (SEVERITY_RANK[a.severity] ?? 9) - (SEVERITY_RANK[b.severity] ?? 9),
       ),
     [findings],
@@ -114,7 +110,7 @@ export function ReviewWorkspace({
       attention: 0,
       acceptable: 0,
     };
-    for (const f of findings) c[effOf(f)]++;
+    for (const f of findings) c[effectiveVerdict(f)]++;
     return c;
   }, [findings]);
 
@@ -130,7 +126,7 @@ export function ReviewWorkspace({
           id: f.id,
           start: f.clause!.spanStart!,
           end: f.clause!.spanEnd!,
-          verdict: effOf(f),
+          verdict: effectiveVerdict(f),
         })),
     [findings],
   );
@@ -327,7 +323,7 @@ function FindingCard({
   const [editing, setEditing] = useState(false);
   const [note, setNote] = useState(finding.humanNote ?? "");
   const [pending, startTransition] = useTransition();
-  const eff = effOf(finding);
+  const eff = effectiveVerdict(finding);
   const overridden = finding.humanVerdict != null;
 
   function save(verdict: Verdict) {
@@ -538,9 +534,9 @@ function Memo({
   obligations: ObligationDTO[];
 }) {
   const blockers = findings.filter(
-    (f) => effOf(f) === "unacceptable" || effOf(f) === "missing",
+    (f) => effectiveVerdict(f) === "unacceptable" || effectiveVerdict(f) === "missing",
   );
-  const attention = findings.filter((f) => effOf(f) === "attention");
+  const attention = findings.filter((f) => effectiveVerdict(f) === "attention");
   const band = riskBand(contract.riskScore ?? 0);
   const bandText =
     band === "high"
@@ -636,7 +632,7 @@ function MemoSection({
         {findings.map((f) => (
           <li key={f.id} className="text-sm">
             <div className="flex items-center gap-2">
-              <VerdictPill verdict={effOf(f)} />
+              <VerdictPill verdict={effectiveVerdict(f)} />
               <span className="font-medium text-ink">{f.ruleTitle}</span>
             </div>
             <p className="mt-1 leading-relaxed text-ink">{f.aiRationale}</p>

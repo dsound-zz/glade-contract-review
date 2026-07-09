@@ -59,11 +59,12 @@ export function AnalysisRunner({
     }
   }
 
-  // Auto-start once for a freshly uploaded contract.
+  // Auto-start once for a freshly uploaded contract. Deferred to a microtask
+  // so run()'s state updates happen outside the effect's synchronous phase.
   useEffect(() => {
     if (started.current) return;
     started.current = true;
-    if (status === "uploaded") run();
+    if (status === "uploaded") queueMicrotask(() => run());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

@@ -74,12 +74,12 @@ export async function createSampleContract(formData: FormData) {
   const [row] = await db
     .insert(contracts)
     .values({
-      title: sample!.title,
-      counterparty: sample!.counterparty,
-      contractType: sample!.contractType,
-      rawText: sample!.rawText,
-      sourceFilename: `${sample!.key}.txt`,
-      wordCount: wordCount(sample!.rawText),
+      title: sample.title,
+      counterparty: sample.counterparty,
+      contractType: sample.contractType,
+      rawText: sample.rawText,
+      sourceFilename: `${sample.key}.txt`,
+      wordCount: wordCount(sample.rawText),
       status: "uploaded",
     })
     .returning({ id: contracts.id });
