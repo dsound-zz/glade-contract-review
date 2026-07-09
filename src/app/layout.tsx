@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 import { Leaf } from "lucide-react";
+import { HeaderNav } from "@/components/HeaderNav";
 import "./globals.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -36,18 +37,7 @@ export default function RootLayout({
               </span>
             </Link>
             <nav className="flex items-center gap-1 text-sm">
-              <Link
-                href="/"
-                className="rounded-md px-3 py-1.5 text-muted hover:bg-canvas hover:text-ink"
-              >
-                Contracts
-              </Link>
-              <Link
-                href="/playbook"
-                className="rounded-md px-3 py-1.5 text-muted hover:bg-canvas hover:text-ink"
-              >
-                Playbook
-              </Link>
+              <HeaderNav />
               <Link
                 href="/contracts/new"
                 className="ml-1 rounded-md bg-brand-600 px-3.5 py-1.5 font-medium text-white hover:bg-brand-700"
